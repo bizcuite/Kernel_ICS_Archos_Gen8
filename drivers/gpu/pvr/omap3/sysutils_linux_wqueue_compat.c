@@ -32,10 +32,6 @@
 #include <linux/platform_device.h>
 #include <mach/omap-pm.h>
 
-#ifdef CONFIG_CLOCKS_INIT
-#include <mach/board-archos.h>
-#endif
-
 #include "sgxdefs.h"
 #include "services_headers.h"
 #include "sysinfo.h"
@@ -55,10 +51,7 @@
 #define SGX_PARENT_CLOCK "cm_96m_fck"
 #else
 #define SGX_PARENT_CLOCK "core_ck"
-#define SGX_PARENT_CLOCK_ES_1_2 "corex2_fck"
 #endif
-
-static int vdd1_max_level;
 
 extern struct platform_device *gpsPVRLDMDev;
 #if defined(SGX530) && (SGX_CORE_REV == 125)
@@ -84,20 +77,24 @@ static IMG_VOID PowerLockUnwrap(SYS_SPECIFIC_DATA *psSysSpecData)
 	}
 }
 
-PVRSRV_ERROR SysPowerLockWrap(SYS_DATA *psSysData)
+PVRSRV_ERROR SysPowerLockWrap(IMG_BOOL bTryLock)
 {
-	SYS_SPECIFIC_DATA *psSysSpecData = (SYS_SPECIFIC_DATA *) psSysData->pvSysSpecificData;
+	SYS_DATA	*psSysData;
 
-	PowerLockWrap(psSysSpecData);
+	SysAcquireData(&psSysData);
+
+	PowerLockWrap(psSysData->pvSysSpecificData);
 
 	return PVRSRV_OK;
 }
 
-IMG_VOID SysPowerLockUnwrap(SYS_DATA *psSysData)
+IMG_VOID SysPowerLockUnwrap(IMG_VOID)
 {
-	SYS_SPECIFIC_DATA *psSysSpecData = (SYS_SPECIFIC_DATA *) psSysData->pvSysSpecificData;
+	SYS_DATA	*psSysData;
 
-	PowerLockUnwrap(psSysSpecData);
+	SysAcquireData(&psSysData);
+
+	PowerLockUnwrap(psSysData->pvSysSpecificData);
 }
 
 IMG_BOOL WrapSystemPowerChange(SYS_SPECIFIC_DATA *psSysSpecData)
@@ -121,12 +118,12 @@ static inline IMG_UINT32 scale_by_rate(IMG_UINT32 val, IMG_UINT32 rate1, IMG_UIN
 
 static inline IMG_UINT32 scale_prop_to_SGX_clock(IMG_UINT32 val, IMG_UINT32 rate)
 {
-	return scale_by_rate(val, rate, SYS_SGX_CLOCK_SPEED_ES_1_2);
+	return scale_by_rate(val, rate, SYS_SGX_CLOCK_SPEED);
 }
 
 static inline IMG_UINT32 scale_inv_prop_to_SGX_clock(IMG_UINT32 val, IMG_UINT32 rate)
 {
-	return scale_by_rate(val, SYS_SGX_CLOCK_SPEED_ES_1_2, rate);
+	return scale_by_rate(val, SYS_SGX_CLOCK_SPEED, rate);
 }
 
 IMG_VOID SysGetSGXTimingInformation(SGX_TIMING_INFORMATION *psTimingInfo)
@@ -190,34 +187,22 @@ PVRSRV_ERROR EnableSGXClocks(SYS_DATA *psSysData)
 		return PVRSRV_ERROR_UNABLE_TO_ENABLE_CLOCK;
 	}
 
-	if (omap_rev() == OMAP3630_REV_ES1_2)
-	{
-		lNewRate = clk_round_rate(psSysSpecData->psSGX_FCK, SYS_SGX_CLOCK_SPEED_ES_1_2 + ONE_MHZ);
-	}
-	else
-	{
-		lNewRate = clk_round_rate(psSysSpecData->psSGX_FCK, SYS_SGX_CLOCK_SPEED + ONE_MHZ);
-	}
+	lNewRate = clk_round_rate(psSysSpecData->psSGX_FCK, SYS_SGX_CLOCK_SPEED + ONE_MHZ);
 	if (lNewRate <= 0)
 	{
 		PVR_DPF((PVR_DBG_ERROR, "EnableSGXClocks: Couldn't round SGX functional clock rate"));
 		return PVRSRV_ERROR_UNABLE_TO_ROUND_CLOCK_RATE;
 	}
 
-#ifdef CONFIG_CLOCKS_INIT
-    if (!machine_can_have_gfx_fullspeed()) 
-#endif
-    {
-	    lRate = clk_get_rate(psSysSpecData->psSGX_FCK);
-	    if (lRate != lNewRate)
-	    {
-		    res = clk_set_rate(psSysSpecData->psSGX_FCK, lNewRate);
-		    if (res < 0)
-		    {
-			    PVR_DPF((PVR_DBG_WARNING, "EnableSGXClocks: Couldn't set SGX functional clock rate (%d)", res));
-		    }
-	    }
-    }
+	lRate = clk_get_rate(psSysSpecData->psSGX_FCK);
+	if (lRate != lNewRate)
+	{
+		res = clk_set_rate(psSysSpecData->psSGX_FCK, lNewRate);
+		if (res < 0)
+		{
+			PVR_DPF((PVR_DBG_WARNING, "EnableSGXClocks: Couldn't set SGX functional clock rate (%d)", res));
+		}
+	}
 
 #if defined(DEBUG)
 	{
@@ -297,10 +282,7 @@ PVRSRV_ERROR EnableSystemClocks(SYS_DATA *psSysData)
 
 		atomic_set(&psSysSpecData->sSGXClocksEnabled, 0);
 
-		vdd1_max_level = omap_pm_get_max_vdd1_opp();
-
-		psCLK = clk_get(NULL, SGX_PARENT_CLOCK_ES_1_2);
-
+		psCLK = clk_get(NULL, SGX_PARENT_CLOCK);
 		if (IS_ERR(psCLK))
 		{
 			PVR_DPF((PVR_DBG_ERROR, "EnableSsystemClocks: Couldn't get Core Clock"));
@@ -333,18 +315,12 @@ PVRSRV_ERROR EnableSystemClocks(SYS_DATA *psSysData)
 		}
 		psSysSpecData->psMPU_CK = psCLK;
 #endif
-
-#ifdef CONFIG_CLOCKS_INIT
-       if (!machine_can_have_gfx_fullspeed()) 
-#endif
-       {
-		    res = clk_set_parent(psSysSpecData->psSGX_FCK, psSysSpecData->psCORE_CK);
-		    if (res < 0)
-		    {
-			    PVR_DPF((PVR_DBG_ERROR, "EnableSystemClocks: Couldn't set SGX parent clock (%d)", res));
-			    goto ExitError;
-		    }
-        }
+		res = clk_set_parent(psSysSpecData->psSGX_FCK, psSysSpecData->psCORE_CK);
+		if (res < 0)
+		{
+			PVR_DPF((PVR_DBG_ERROR, "EnableSystemClocks: Couldn't set SGX parent clock (%d)", res));
+			goto ExitError;
+		}
 
 		psSysSpecData->bSysClocksOneTimeInit = IMG_TRUE;
 	}

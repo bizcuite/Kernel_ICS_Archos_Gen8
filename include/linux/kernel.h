@@ -242,6 +242,15 @@ extern struct ratelimit_state printk_ratelimit_state;
 extern int printk_ratelimit(void);
 extern bool printk_timed_ratelimit(unsigned long *caller_jiffies,
 				   unsigned int interval_msec);
+#define printk_once(x...) ({                    \
+        static bool __print_once;               \
+                                                \
+        if (!__print_once) {                    \
+                __print_once = true;            \
+                printk(x);                      \
+        }                                       \
+})
+
 #else
 static inline int vprintk(const char *s, va_list args)
 	__attribute__ ((format (printf, 1, 0)));
@@ -273,6 +282,8 @@ static inline void console_verbose(void)
 	if (console_loglevel)
 		console_loglevel = 15;
 }
+
+
 
 extern void bust_spinlocks(int yes);
 extern void wake_up_klogd(void);

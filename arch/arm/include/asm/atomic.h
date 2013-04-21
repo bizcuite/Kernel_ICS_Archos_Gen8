@@ -23,6 +23,12 @@
 
 #if __LINUX_ARM_ARCH__ >= 6
 
+
+typedef struct {
+        long long counter;
+} atomic64_t;
+
+
 /*
  * ARMv6 UP and SMP safe atomic ops.  We use load exclusive and
  * store exclusive to ensure that these are atomic.  We may loop
@@ -200,11 +206,44 @@ static inline int atomic_add_unless(atomic_t *v, int a, int u)
 
 #define atomic_add_negative(i,v) (atomic_add_return(i, v) < 0)
 
+#define atomic64_inc(v)                 atomic64_add(1LL, (v))
+
 /* Atomic operations are already serializing on ARM */
 #define smp_mb__before_atomic_dec()	barrier()
 #define smp_mb__after_atomic_dec()	barrier()
 #define smp_mb__before_atomic_inc()	barrier()
 #define smp_mb__after_atomic_inc()	barrier()
+
+
+static inline void atomic64_add(u64 i, atomic64_t *v)
+{
+        u64 result;
+        unsigned long tmp;
+
+        __asm__ __volatile__("@ atomic64_add\n"
+"1:     ldrexd  %0, %H0, [%3]\n"
+"       adds    %0, %0, %4\n"
+"       adc     %H0, %H0, %H4\n"
+"       strexd  %1, %0, %H0, [%3]\n"
+"       teq     %1, #0\n"
+"       bne     1b"
+        : "=&r" (result), "=&r" (tmp), "+Qo" (v->counter)
+        : "r" (&v->counter), "r" (i)
+        : "cc");
+}
+
+static inline u64 atomic64_read(atomic64_t *v)
+{
+        u64 result;
+
+        __asm__ __volatile__("@ atomic64_read\n"
+"       ldrexd  %0, %H0, [%1]"
+        : "=&r" (result)
+        : "r" (&v->counter), "Qo" (v->counter)
+        );
+
+        return result;
+}
 
 #include <asm-generic/atomic.h>
 #endif

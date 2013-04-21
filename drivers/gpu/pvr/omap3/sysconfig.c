@@ -24,6 +24,13 @@
  *
  ******************************************************************************/
 
+#include <linux/debugfs.h>
+#include <linux/hrtimer.h>
+#include <linux/ktime.h>
+#include <linux/seq_file.h>
+#include <linux/vmalloc.h>
+#include <linux/workqueue.h>
+
 #include "services_headers.h"
 #include "kerneldisplay.h"
 #include "oemfuncs.h"
@@ -63,7 +70,7 @@ IMG_UINT32 PVRSRV_BridgeDispatchKM(IMG_UINT32	Ioctl,
 								   IMG_UINT32	OutBufLen,
 								   IMG_UINT32	*pdwBytesTransferred);
 
-#if defined(DUMP_OMAP34xx_CLOCKS) && defined(__linux__)
+#if defined(DEBUG) && defined(DUMP_OMAP34xx_CLOCKS) && defined(__linux__)
 
 #pragma GCC diagnostic ignored "-Wstrict-prototypes"
 #include <mach/clock.h>
@@ -95,7 +102,16 @@ static int omap3_noncore_dpll_enable(struct clk *clk) { return 0; }
 static void omap3_noncore_dpll_disable(struct clk *clk) {}
 static int omap3_noncore_dpll_set_rate(struct clk *clk, unsigned long rate) { return 0; }
 static int omap3_core_dpll_m2_set_rate(struct clk *clk, unsigned long rate) { return 0; }
-
+void followparent_recalc(struct clk *clk, unsigned long new_parent_rate,
+								u8 rate_storage) {}
+long omap2_dpll_round_rate(struct clk *clk, unsigned long target_rate) { return 0; }
+void omap2_clksel_recalc(struct clk *clk, unsigned long new_parent_rate,
+								u8 rate_storage) {}
+long omap2_clksel_round_rate(struct clk *clk, unsigned long target_rate) { return 0; }
+int omap2_clksel_set_rate(struct clk *clk, unsigned long rate) { return 0; }
+void omap2_fixed_divisor_recalc(struct clk *clk, unsigned long new_parent_rate,
+									   u8 rate_storage) {}
+void omap2_init_clksel_parent(struct clk *clk) {}
 #endif
 
 static void dump_omap34xx_clocks(void)
@@ -130,17 +146,13 @@ static void dump_omap34xx_clocks(void)
 		rate = clk_get_rate(copy);
 		if (rate < 1000000)
 		{
-			printk( "%s: clock %s is %lu KHz (%lu Hz)\n", __func__, cp->name, rate/1000, rate);
+			PVR_DPF((PVR_DBG_ERROR, "%s: clock %s is %lu KHz (%lu Hz)", __func__, cp->name, rate/1000, rate));
 		}
 		else
 		{
-			printk( "%s: clock %s is %lu MHz (%lu Hz)\n", __func__, cp->name, rate/1000000, rate);
+			PVR_DPF((PVR_DBG_ERROR, "%s: clock %s is %lu MHz (%lu Hz)", __func__, cp->name, rate/1000000, rate));
 		}
 	}
-}
-
-void dump_clock(void) { 
-    dump_omap34xx_clocks();
 }
 
 #else
@@ -356,19 +368,10 @@ PVRSRV_ERROR SysInitialise(IMG_VOID)
 		return eError;
 	}
 
-	TimerRegPhysBase.uiAddr = SYS_OMAP3430_GP11TIMER_REGS_SYS_PHYS_BASE;
-	gpsSysData->pvSOCTimerRegisterKM = IMG_NULL;
-	gpsSysData->hSOCTimerRegisterOSMemHandle = 0;
-	OSReservePhys(TimerRegPhysBase,
-				  4,
-				  PVRSRV_HAP_MULTI_PROCESS|PVRSRV_HAP_UNCACHED,
-				  (IMG_VOID **)&gpsSysData->pvSOCTimerRegisterKM,
-				  &gpsSysData->hSOCTimerRegisterOSMemHandle);
-
 #if !defined(SGX_DYNAMIC_TIMING_INFO)
 
 	psTimingInfo = &gsSGXDeviceMap.sTimingInfo;
-	psTimingInfo->ui32CoreClockSpeed = SYS_SGX_CLOCK_SPEED_ES_1_2;
+	psTimingInfo->ui32CoreClockSpeed = SYS_SGX_CLOCK_SPEED;
 	psTimingInfo->ui32HWRecoveryFreq = SYS_SGX_HWRECOVERY_TIMEOUT_FREQ;
 #if defined(SUPPORT_ACTIVE_POWER_MANAGEMENT)
 	psTimingInfo->bEnableActivePM = IMG_TRUE;
@@ -511,6 +514,24 @@ PVRSRV_ERROR SysInitialise(IMG_VOID)
 
 	DisableSGXClocks(gpsSysData);
 #endif
+
+#if !defined(PVR_NO_OMAP_TIMER)
+#if defined(PVR_OMAP_TIMER_BASE_IN_SYS_SPEC_DATA)
+	TimerRegPhysBase = gsSysSpecificData.sTimerRegPhysBase;
+#else
+	TimerRegPhysBase.uiAddr = SYS_OMAP3430_GP11TIMER_REGS_SYS_PHYS_BASE;
+#endif
+	gpsSysData->pvSOCTimerRegisterKM = IMG_NULL;
+	gpsSysData->hSOCTimerRegisterOSMemHandle = 0;
+	if (TimerRegPhysBase.uiAddr != 0) {
+		OSReservePhys(TimerRegPhysBase,
+				4,
+				PVRSRV_HAP_MULTI_PROCESS|PVRSRV_HAP_UNCACHED,
+				(IMG_VOID **)&gpsSysData->pvSOCTimerRegisterKM,
+				&gpsSysData->hSOCTimerRegisterOSMemHandle);
+	}
+#endif
+
 
 	return PVRSRV_OK;
 }

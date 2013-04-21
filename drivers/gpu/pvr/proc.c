@@ -1,6 +1,6 @@
 /**********************************************************************
  *
- * Copyright(c) 2008 Imagination Technologies Ltd. All rights reserved.
+ * Copyright (C) Imagination Technologies Ltd. All rights reserved.
  * 
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -24,13 +24,16 @@
  *
  ******************************************************************************/
 
+#include <linux/version.h>
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38))
 #ifndef AUTOCONF_INCLUDED
- #include <linux/config.h>
+#include <linux/config.h>
+#endif
 #endif
 
 #include <linux/init.h>
 #include <linux/module.h>
-#include <linux/version.h>
 #include <linux/fs.h>
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
@@ -707,17 +710,18 @@ static void ProcSeqShowVersion(struct seq_file *sfile,void* el)
 
 	if(el == PVR_PROC_SEQ_START_TOKEN)
 	{
-		seq_printf( sfile,
-						"Version %s\n",
-						PVRVERSION_STRING);
+		seq_printf(sfile,
+				"Version %s (%s) %s\n",
+				PVRVERSION_STRING,
+				PVR_BUILD_TYPE, PVR_BUILD_DIR);
 		return;
 	}
 
-    psSysData = SysAcquireDataNoCheck();
-    if(psSysData != IMG_NULL && psSysData->pszVersionString != IMG_NULL)
-    {
-       pszSystemVersionString = psSysData->pszVersionString;
-    }
+	psSysData = SysAcquireDataNoCheck();
+	if(psSysData != IMG_NULL && psSysData->pszVersionString != IMG_NULL)
+	{
+		pszSystemVersionString = psSysData->pszVersionString;
+	}
 
 	seq_printf( sfile, "System Version String: %s\n", pszSystemVersionString);
 }
@@ -818,14 +822,14 @@ static void* ProcSeqOff2ElementSysNodes(struct seq_file * sfile, loff_t off)
     psSysData = SysAcquireDataNoCheck();
     if (psSysData != IMG_NULL)
     {
-
+	
 	psDevNode = (PVRSRV_DEVICE_NODE*)
 			List_PVRSRV_DEVICE_NODE_Any_va(psSysData->psDeviceNodeList,
 													DecOffPsDev_AnyVaCb,
 													&off);
     }
 
-
+    
     return (void*)psDevNode;
 }
 

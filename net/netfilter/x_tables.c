@@ -34,6 +34,8 @@ MODULE_DESCRIPTION("{ip,ip6,arp,eb}_tables backend module");
 
 #define SMP_ALIGN(x) (((x) + SMP_CACHE_BYTES-1) & ~(SMP_CACHE_BYTES-1))
 
+
+
 struct compat_delta {
 	struct compat_delta *next;
 	unsigned int offset;

@@ -7,7 +7,9 @@
 
 obj-y	:= nonet.o
 
+
 obj-$(CONFIG_NET)		:= socket.o core/
+obj-m += xt_qtaguid.o
 
 tmp-$(CONFIG_COMPAT) 		:= compat.o
 obj-$(CONFIG_NET)		+= $(tmp-y)

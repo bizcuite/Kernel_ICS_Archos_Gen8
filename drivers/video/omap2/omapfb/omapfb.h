@@ -29,6 +29,7 @@
 
 #include <mach/display.h>
 #include <linux/earlysuspend.h>
+#include <mach/vrfb.h>
 
 #ifdef DEBUG
 extern unsigned int omapfb_debug;

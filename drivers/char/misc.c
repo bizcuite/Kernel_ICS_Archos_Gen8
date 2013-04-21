@@ -184,8 +184,57 @@ static const struct file_operations misc_fops = {
  *	A zero is returned on success and a negative errno code for
  *	failure.
  */
- 
+
 int misc_register(struct miscdevice * misc)
+{
+   struct miscdevice *c;
+        dev_t dev;
+       int err = 0;
+
+        INIT_LIST_HEAD(&misc->list);
+
+       mutex_lock(&misc_mtx);
+        list_for_each_entry(c, &misc_list, list) {
+                if (c->minor == misc->minor) {
+                      mutex_unlock(&misc_mtx);
+                        return -EBUSY;
+                }
+        }
+
+        if (misc->minor == MISC_DYNAMIC_MINOR) {
+              int i = DYNAMIC_MINORS;
+                while (--i >= 0)
+                       if ( (misc_minors[i>>3] & (1 << (i&7))) == 0)
+                                break;
+                if (i<0) {
+                        mutex_unlock(&misc_mtx);
+                        return -EBUSY;
+                }
+                misc->minor = i;
+        }
+
+        if (misc->minor < DYNAMIC_MINORS)
+                misc_minors[misc->minor >> 3] |= 1 << (misc->minor & 7);
+        dev = MKDEV(MISC_MAJOR, misc->minor);
+
+        misc->this_device = device_create(misc_class, misc->parent, dev,
+                                          misc, "%s", misc->name);
+        if (IS_ERR(misc->this_device)) {
+                err = PTR_ERR(misc->this_device);
+                 goto out;
+        }
+
+         /*
+         * Add it to the front, so that later devices can "override"
+         * earlier defaults
+         */
+        list_add(&misc->list, &misc_list);
+ out:
+        mutex_unlock(&misc_mtx);
+        return err;
+} 
+
+/*int misc_register(struct miscdevice * misc)
 {
 	struct miscdevice *c;
 	dev_t dev;
@@ -224,15 +273,12 @@ int misc_register(struct miscdevice * misc)
 		goto out;
 	}
 
-	/*
-	 * Add it to the front, so that later devices can "override"
-	 * earlier defaults
-	 */
+
 	list_add(&misc->list, &misc_list);
  out:
 	mutex_unlock(&misc_mtx);
 	return err;
-}
+}*/
 
 /**
  *	misc_deregister - unregister a miscellaneous device
