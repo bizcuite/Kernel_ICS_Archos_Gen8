@@ -299,7 +299,7 @@ static int twl_mmc1_set_power(struct device *dev, int slot, int power_on,
 		mmc_regulator_set_ocr(c->vcc, vdd);
 
 		/* 400uS required for VDDS to stable */
-		udelay(400);
+		udelay(500);
 
 		reg = omap_ctrl_readl(control_pbias_offset);
 		reg |= OMAP2_PBIASLITEPWRDNZ0;

@@ -68,7 +68,7 @@ static int panel_resume(struct omap_dss_device *disp)
 
 
 // timings references to define, waiting for visual  !!!
-#define CLAA_LCD_PIXCLOCK	51200		/* 51,2MHz */
+#define CLAA_LCD_PIXCLOCK	61200		/* 51,2MHz */
 
 static struct omap_video_timings claa_panel_timings = {
 		.x_res		= 1024,

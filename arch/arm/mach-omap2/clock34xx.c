@@ -924,6 +924,10 @@ int __init omap2_clk_init(void)
 	       "%ld.%01ld/%ld/%ld MHz\n",
 	       (osc_sys_ck.rate / 1000000), (osc_sys_ck.rate / 100000) % 10,
 	       (core_ck.rate / 1000000), (arm_fck.rate / 1000000));
+printk("Clocking rate (Crystal/DPLL/ARM core): "
+	       "%ld.%01ld/%ld/%ld MHz\n",
+	       (osc_sys_ck.rate / 1000000), (osc_sys_ck.rate / 100000) % 10,
+	       (core_ck.rate / 1000000), (arm_fck.rate / 1000000));
 
 	/*
 	 * Only enable those clocks we will need, let the drivers

@@ -205,9 +205,11 @@ static ssize_t vdd_opp_store(struct kobject *kobj, struct kobj_attribute *attr,
 		if (cpu_is_omap3630()) {
 			if (value < S65M || value > S800M) {
 				printk(KERN_ERR "dsp_opp: Invalid value\n");
+				printk("############# KERNEL ######### dsp_opp_invalid_freq: %lu \n", value);
 				return -EINVAL;
 			}
 		} else {
+				printk("############# KERNEL ######### dsp_opp_valid_freq: %lu \n", value);
 			opp_table = omap_get_dsp_rate_table();
 			if (value < opp_table[MIN_VDD1_OPP].rate
 				|| value > opp_table[MAX_VDD1_OPP].rate) {
@@ -217,6 +219,7 @@ static ssize_t vdd_opp_store(struct kobject *kobj, struct kobj_attribute *attr,
 		}
 		omap_pm_dsp_set_min_opp(&sysfs_dsp_dev, value);
 	} else if (attr == &vdd2_opp_attr) {
+				printk("############# KERNEL ######### dsp_opp_store_freq: %lu \n", value);
 		if (value < MIN_VDD2_OPP || (value > MAX_VDD2_OPP)) {
 			printk(KERN_ERR "vdd_opp_store: Invalid value\n");
 			return -EINVAL;
@@ -229,12 +232,14 @@ static ssize_t vdd_opp_store(struct kobject *kobj, struct kobj_attribute *attr,
 				omap_pm_set_min_bus_tput(&sysfs_cpufreq_dev,
 						OCP_INITIATOR_AGENT, 166*1000*4);
 		} else if (cpu_is_omap3630()) {
-			if (value == VDD2_OPP1)
+			if (value == VDD2_OPP1){
 				omap_pm_set_min_bus_tput(&sysfs_cpufreq_dev,
 						OCP_INITIATOR_AGENT, 100*1000*4);
-			else if (value == VDD2_OPP2)
+				printk("###########KERNEL ##### VDD2_OPP1 selected \n");}
+			else if (value == VDD2_OPP2){
 				omap_pm_set_min_bus_tput(&sysfs_cpufreq_dev,
 						OCP_INITIATOR_AGENT, 200*1000*4);
+				printk("###########KERNEL ##### VDD2_OPP2 selected \n");}
 		}
 
 	} else if (attr == &vdd1_max_attr) {
@@ -273,6 +278,7 @@ static ssize_t vdd_opp_lock_store(struct kobject *kobj,
 				printk(KERN_ERR "vdd_opp_store: Invalid value\n");
 				return -EINVAL;
 				}
+				printk("############# KERNEL ######### vdd1_OPP: %d value: %d \n", VDD1_OPP, value);
 		resource_set_opp_level(VDD1_OPP, value, flags);
 		}
 	} else if (attr == &vdd2_lock_attr) {
@@ -291,6 +297,7 @@ static ssize_t vdd_opp_lock_store(struct kobject *kobj,
 				printk(KERN_ERR "vdd_opp_store: Invalid value\n");
 				return -EINVAL;
 			}
+				printk("############# KERNEL ######### vdd2_OPP: %d value: %d \n", VDD2_OPP, value);
 			resource_set_opp_level(VDD2_OPP, value, flags);
 		}
 	}  else {
@@ -305,12 +312,16 @@ static ssize_t vdd_max_dsp_show(struct kobject *kobj,
 	struct omap_opp *dsp_rate;
 	if (attr == &max_dsp_frequency_attr) {
 		dsp_rate = omap_get_dsp_rate_table();
-		if (!cpu_is_omap3630())
+		if (!cpu_is_omap3630()){
 			return sprintf(buf, "%ld\n",
 					dsp_rate[MAX_VDD1_OPP].rate);
-		else
+			printk("######## KERNEL_DSP ### max_dsp_frequency = %lu \n",max_dsp_frequency);
+			}
+		else{
 			return sprintf(buf, "%ld\n",
 					dsp_rate[VDD1_OPP4].rate);
+			printk("######## KERNEL_DSP ### max_dsp_frequency 3630 = %lu \n",max_dsp_frequency);
+			}
 	}
 	return -EINVAL;
 }

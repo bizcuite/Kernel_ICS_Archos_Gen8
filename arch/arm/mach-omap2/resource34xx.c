@@ -538,6 +538,7 @@ int set_dpll3_volt_freq(bool dpll3_restore)
 	} else if (cpu_is_omap3630()) {
 		min_opp = omap_pm_get_min_vdd2_opp();
 		max_opp = omap_pm_get_max_vdd2_opp();
+		printk("###########KERNEL######### min_opp = %d --  max_opp = %d \n", min_opp, max_opp);
 	}
 
 	if (!dpll3_restore) {
@@ -556,6 +557,7 @@ int set_dpll3_volt_freq(bool dpll3_restore)
 		} else if (cpu_is_omap3630()) {
 			t_vsel = l3_opps[max_opp].vsel;
 			vdd2_save_opp = resp->curr_level;
+		printk("###########KERNEL#########vdd2_save_opp = %d \n", vdd2_save_opp);
 		}
 
 		c_vsel = l3_opps[resp->curr_level].vsel;
@@ -583,11 +585,13 @@ int set_dpll3_volt_freq(bool dpll3_restore)
 			ret = clk_set_rate(dpll3_clk,
 					l3_opps[min_opp].rate * l3_div);
 			resp->curr_level = min_opp;
+		printk("###########KERNEL######### !!dpll3_clk %d \n", dpll3_clk);
 
 		} else {
 			ret = clk_set_rate(dpll3_clk,
 					l3_opps[vdd2_save_opp].rate * l3_div);
 			resp->curr_level = vdd2_save_opp;
+		printk("###########KERNEL######### dpll3_clk %d - vdd2_save_opp = %d \n", dpll3_clk, vdd2_save_opp);
 		}
 
 #ifdef CONFIG_PM
