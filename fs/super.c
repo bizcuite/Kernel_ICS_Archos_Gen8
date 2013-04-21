@@ -41,6 +41,7 @@
 #include <linux/async.h>
 #include <asm/uaccess.h>
 #include "internal.h"
+#include <linux/cleancache.h>
 
 
 LIST_HEAD(super_blocks);
@@ -110,6 +111,7 @@ static struct super_block *alloc_super(struct file_system_type *type)
 		s->s_qcop = sb_quotactl_ops;
 		s->s_op = &default_op;
 		s->s_time_gran = 1000000000;
+		s->cleancache_poolid = -1;
 	}
 out:
 	return s;
@@ -195,6 +197,7 @@ void deactivate_super(struct super_block *s)
 {
 	struct file_system_type *fs = s->s_type;
 	if (atomic_dec_and_lock(&s->s_active, &sb_lock)) {
+		cleancache_flush_fs(s);
 		s->s_count -= S_BIAS-1;
 		spin_unlock(&sb_lock);
 		DQUOT_OFF(s, 0);

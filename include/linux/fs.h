@@ -1199,6 +1199,8 @@ struct super_block {
 	 */
 	char *s_options;
 
+
+	int cleancache_poolid;
 	/*
 	 * storage for asynchronous operations
 	 */

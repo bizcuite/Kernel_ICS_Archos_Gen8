@@ -2752,6 +2752,12 @@ unsigned long nr_iowait(void)
 	return sum;
 }
 
+unsigned long nr_iowait_cpu(int cpu)
+{
+        struct rq *this = cpu_rq(cpu);
+        return atomic_read(&this->nr_iowait);
+}
+
 unsigned long nr_active(void)
 {
 	unsigned long i, running = 0, uninterruptible = 0;

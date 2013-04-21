@@ -43,7 +43,7 @@
  * towards the ideal frequency and slower after it has passed it. Similarly,
  * lowering the frequency towards the ideal frequency is faster than below it.
  */
-#define DEFAULT_AWAKE_IDEAL_FREQ 696000
+#define DEFAULT_AWAKE_IDEAL_FREQ 768000
 static unsigned int awake_ideal_freq;
 
 /*
@@ -52,7 +52,7 @@ static unsigned int awake_ideal_freq;
  * that practically when sleep_ideal_freq==0 the awake_ideal_freq is used
  * also when suspended).
  */
-#define DEFAULT_SLEEP_IDEAL_FREQ 108000
+#define DEFAULT_SLEEP_IDEAL_FREQ 245760
 static unsigned int sleep_ideal_freq;
 
 /*
@@ -60,7 +60,7 @@ static unsigned int sleep_ideal_freq;
  * Zero disables and causes to always jump straight to max frequency.
  * When below the ideal freqeuncy we always ramp up to the ideal freq.
  */
-#define DEFAULT_RAMP_UP_STEP 256000
+#define DEFAULT_RAMP_UP_STEP 50000
 static unsigned int ramp_up_step;
 
 /*
@@ -68,7 +68,7 @@ static unsigned int ramp_up_step;
  * Zero disables and will calculate ramp down according to load heuristic.
  * When above the ideal freqeuncy we always ramp down to the ideal freq.
  */
-#define DEFAULT_RAMP_DOWN_STEP 168000
+#define DEFAULT_RAMP_DOWN_STEP 100000
 static unsigned int ramp_down_step;
 
 /*
@@ -173,11 +173,11 @@ struct cpufreq_governor cpufreq_gov_smartass2 = {
 
 inline static void smartass_update_min_max(struct smartass_info_s *this_smartass, struct cpufreq_policy *policy, int suspend) {
 	if (suspend) {
-		this_smartass->ideal_speed = /* sleep_ideal_freq; but make sure it obeys the policy min/max */
+		this_smartass->ideal_speed = // sleep_ideal_freq; but make sure it obeys the policy min/max
 			policy->max > sleep_ideal_freq ?
 			(sleep_ideal_freq > policy->min ? sleep_ideal_freq : policy->min) : policy->max;
 	} else {
-		this_smartass->ideal_speed = /* awake_ideal_freq; but make sure it obeys the policy min/max */
+		this_smartass->ideal_speed = // awake_ideal_freq; but make sure it obeys the policy min/max
 			policy->min < awake_ideal_freq ?
 			(awake_ideal_freq < policy->max ? awake_ideal_freq : policy->max) : policy->min;
 	}
@@ -237,14 +237,14 @@ inline static int target_freq(struct cpufreq_policy *policy, struct smartass_inf
 	{
 		target = table[index].frequency;
 		if (target == old_freq) {
-			/* if for example we are ramping up to *at most* current + ramp_up_step
-			 * but there is no such frequency higher than the current, try also
-			 * to ramp up to *at least* current + ramp_up_step. */
+			// if for example we are ramping up to *at most* current + ramp_up_step
+			// but there is no such frequency higher than the current, try also
+			// to ramp up to *at least* current + ramp_up_step.
 			if (new_freq > old_freq && prefered_relation==CPUFREQ_RELATION_H
 			    && !cpufreq_frequency_table_target(policy,table,new_freq,
 							       CPUFREQ_RELATION_L,&index))
 				target = table[index].frequency;
-			/* simlarly for ramping down: */
+			// simlarly for ramping down:
 			else if (new_freq < old_freq && prefered_relation==CPUFREQ_RELATION_L
 				&& !cpufreq_frequency_table_target(policy,table,new_freq,
 								   CPUFREQ_RELATION_H,&index))
@@ -252,9 +252,9 @@ inline static int target_freq(struct cpufreq_policy *policy, struct smartass_inf
 		}
 
 		if (target == old_freq) {
-			/* We should not get here:
-			 * If we got here we tried to change to a validated new_freq which is different
-			 * from old_freq, so there is no reason for us to remain at same frequency. */
+			// We should not get here:
+			// If we got here we tried to change to a validated new_freq which is different
+			// from old_freq, so there is no reason for us to remain at same frequency.
 			printk(KERN_WARNING "Smartass: frequency change failed: %d to %d => %d\n",
 			       old_freq,new_freq,target);
 			return 0;
@@ -291,7 +291,7 @@ static void cpufreq_smartass_timer(unsigned long cpu)
 	delta_idle = cputime64_sub(now_idle, this_smartass->time_in_idle);
 	delta_time = cputime64_sub(update_time, this_smartass->idle_exit_time);
 
-	/* If timer ran less than 1ms after short-term sample started, retry. */
+	// If timer ran less than 1ms after short-term sample started, retry.
 	if (delta_time < 1000) {
 		if (!timer_pending(&this_smartass->timer))
 			reset_timer(cpu,this_smartass);
@@ -309,9 +309,9 @@ static void cpufreq_smartass_timer(unsigned long cpu)
 	this_smartass->cur_cpu_load = cpu_load;
 	this_smartass->old_freq = old_freq;
 
-	/* Scale up if load is above max or if there where no idle cycles since coming out of idle,
-	 * additionally, if we are at or above the ideal_speed, verify we have been at this frequency
-	 * for at least up_rate_us: */
+	// Scale up if load is above max or if there where no idle cycles since coming out of idle,
+	// additionally, if we are at or above the ideal_speed, verify we have been at this frequency
+	// for at least up_rate_us:
 	if (cpu_load > max_cpu_load || delta_idle == 0)
 	{
 		if (old_freq < policy->max &&
@@ -327,8 +327,8 @@ static void cpufreq_smartass_timer(unsigned long cpu)
 		}
 		else this_smartass->ramp_dir = 0;
 	}
-	/* Similarly for scale down: load should be below min and if we are at or below ideal
-	 * frequency we require that we have been at this frequency for at least down_rate_us: */
+	// Similarly for scale down: load should be below min and if we are at or below ideal
+	// frequency we require that we have been at this frequency for at least down_rate_us:
 	else if (cpu_load < min_cpu_load && old_freq > policy->min &&
 		 (old_freq > this_smartass->ideal_speed ||
 		  cputime64_sub(update_time, this_smartass->freq_change_time) >= down_rate_us))
@@ -342,11 +342,11 @@ static void cpufreq_smartass_timer(unsigned long cpu)
 	}
 	else this_smartass->ramp_dir = 0;
 
-	/* To avoid unnecessary load when the CPU is already at high load, we don't
-	 * reset ourselves if we are at max speed. If and when there are idle cycles,
-	 * the idle loop will activate the timer.
-	 * Additionally, if we queued some work, the work task will reset the timer
-	 * after it has done its adjustments. */
+	// To avoid unnecessary load when the CPU is already at high load, we don't
+	// reset ourselves if we are at max speed. If and when there are idle cycles,
+	// the idle loop will activate the timer.
+	// Additionally, if we queued some work, the work task will reset the timer
+	// after it has done its adjustments.
 	if (!queued_work && old_freq < policy->max)
 		reset_timer(cpu,this_smartass);
 }
@@ -392,13 +392,13 @@ static void cpufreq_smartass_freq_change_time_work(struct work_struct *work)
 		policy = this_smartass->cur_policy;
 
 		if (old_freq != policy->cur) {
-			/* frequency was changed by someone else? */
+			// frequency was changed by someone else?
 			printk(KERN_WARNING "Smartass: frequency changed by 3rd party: %d to %d\n",
 			       old_freq,policy->cur);
 			new_freq = old_freq;
 		}
 		else if (ramp_dir > 0 && nr_running() > 1) {
-			/* ramp up logic: */
+			// ramp up logic:
 			if (old_freq < this_smartass->ideal_speed)
 				new_freq = this_smartass->ideal_speed;
 			else if (ramp_up_step) {
@@ -413,7 +413,7 @@ static void cpufreq_smartass_freq_change_time_work(struct work_struct *work)
 				old_freq,ramp_dir,this_smartass->ideal_speed);
 		}
 		else if (ramp_dir < 0) {
-			/* ramp down logic: */
+			// ramp down logic:
 			if (old_freq > this_smartass->ideal_speed) {
 				new_freq = this_smartass->ideal_speed;
 				relation = CPUFREQ_RELATION_H;
@@ -421,36 +421,35 @@ static void cpufreq_smartass_freq_change_time_work(struct work_struct *work)
 			else if (ramp_down_step)
 				new_freq = old_freq - ramp_down_step;
 			else {
-				/* Load heuristics: Adjust new_freq such that, assuming a linear
-				 * scaling of load vs. frequency, the load in the new frequency
-				 * will be max_cpu_load: */
+				// Load heuristics: Adjust new_freq such that, assuming a linear
+				// scaling of load vs. frequency, the load in the new frequency
+				// will be max_cpu_load:
 				new_freq = old_freq * this_smartass->cur_cpu_load / max_cpu_load;
-				if (new_freq > old_freq) /* min_cpu_load > max_cpu_load ?! */
+				if (new_freq > old_freq) // min_cpu_load > max_cpu_load ?!
 					new_freq = old_freq -1;
 			}
 			dprintk(SMARTASS_DEBUG_ALG,"smartassQ @ %d ramp down: ramp_dir=%d ideal=%d\n",
 				old_freq,ramp_dir,this_smartass->ideal_speed);
 		}
-		else { 
-			/* ramp_dir==0 ?! Could the timer change its mind about a queued ramp up/down
-		         * before the work task gets to run?
-		         * This may also happen if we refused to ramp up because the nr_running()==1 */
+		else { // ramp_dir==0 ?! Could the timer change its mind about a queued ramp up/down
+		       // before the work task gets to run?
+		       // This may also happen if we refused to ramp up because the nr_running()==1
 			new_freq = old_freq;
 			dprintk(SMARTASS_DEBUG_ALG,"smartassQ @ %d nothing: ramp_dir=%d nr_running=%lu\n",
 				old_freq,ramp_dir,nr_running());
 		}
 
-		/* do actual ramp up (returns 0, if frequency change failed): */
+		// do actual ramp up (returns 0, if frequency change failed):
 		new_freq = target_freq(policy,this_smartass,new_freq,old_freq,relation);
 		if (new_freq)
 			this_smartass->freq_change_time_in_idle =
 				get_cpu_idle_time_us(cpu,&this_smartass->freq_change_time);
 
-		/* reset timer: */
+		// reset timer:
 		if (new_freq < policy->max)
 			reset_timer(cpu,this_smartass);
-		/* if we are maxed out, it is pointless to use the timer
-		 * (idle cycles wake up the timer when the timer comes) */
+		// if we are maxed out, it is pointless to use the timer
+		// (idle cycles wake up the timer when the timer comes)
 		else if (timer_pending(&this_smartass->timer))
 			del_timer(&this_smartass->timer);
 	}
@@ -669,6 +668,10 @@ static int cpufreq_governor_smartass(struct cpufreq_policy *new_policy,
 	unsigned int cpu = new_policy->cpu;
 	int rc;
 	struct smartass_info_s *this_smartass = &per_cpu(smartass_info, cpu);
+	unsigned int min_freq = ~0;
+	unsigned int max_freq = 0;
+	unsigned int i;
+	struct cpufreq_frequency_table *freq_table;
 
 	switch (event) {
 	case CPUFREQ_GOV_START:
@@ -687,8 +690,8 @@ static int cpufreq_governor_smartass(struct cpufreq_policy *new_policy,
 
 		smp_wmb();
 
-		/* Do not register the idle hook and create sysfs
-		 * entries if we have already done so. */
+		// Do not register the idle hook and create sysfs
+		// entries if we have already done so.
 		if (atomic_inc_return(&active_count) <= 1) {
 			rc = sysfs_create_group(cpufreq_global_kobject,
 						&smartass_attr_group);
@@ -701,6 +704,21 @@ static int cpufreq_governor_smartass(struct cpufreq_policy *new_policy,
 
 		if (this_smartass->cur_policy->cur < new_policy->max && !timer_pending(&this_smartass->timer))
 			reset_timer(cpu,this_smartass);
+
+		freq_table = cpufreq_frequency_get_table(new_policy->cpu);
+		for (i = 0; (freq_table[i].frequency != CPUFREQ_TABLE_END); i++) {
+			unsigned int freq = freq_table[i].frequency;
+			if (freq == CPUFREQ_ENTRY_INVALID) {
+				continue;
+			}
+			if (freq < min_freq)	
+				min_freq = freq;
+			if (freq > max_freq)
+				max_freq = freq;
+		}
+		sleep_wakeup_freq = freq_table[(i-1)/2].frequency > min_freq ? freq_table[(i-1)/2].frequency : max_freq;		//Value in midrange of available CPU frequencies if sufficient number of freq bins available
+		awake_ideal_freq = freq_table[(i-1)*3/4].frequency > min_freq ? freq_table[(i-1)/2].frequency : max_freq;		//Value in midrange of available CPU frequencies if sufficient number of freq bins available
+		sleep_ideal_freq = freq_table[1].frequency > max_freq ? min_freq : freq_table[1].frequency;		//Value just above minimum frequency
 
 		break;
 
@@ -751,7 +769,7 @@ static void smartass_suspend(int cpu, int suspend)
 		return;
 
 	smartass_update_min_max(this_smartass,policy,suspend);
-	if (!suspend) { /* resume at max speed: */
+	if (!suspend) { // resume at max speed:
 		new_freq = validate_freq(policy,sleep_wakeup_freq);
 
 		dprintk(SMARTASS_DEBUG_JUMPS,"SmartassS: awaking at %d\n",new_freq);
@@ -759,9 +777,9 @@ static void smartass_suspend(int cpu, int suspend)
 		__cpufreq_driver_target(policy, new_freq,
 					CPUFREQ_RELATION_L);
 	} else {
-		/* to avoid wakeup issues with quick sleep/wakeup don't change actual frequency when entering sleep
-		 * to allow some time to settle down. Instead we just reset our statistics (and reset the timer).
-		 * Eventually, the timer will adjust the frequency if necessary. */
+		// to avoid wakeup issues with quick sleep/wakeup don't change actual frequency when entering sleep
+		// to allow some time to settle down. Instead we just reset our statistics (and reset the timer).
+		// Eventually, the timer will adjust the frequency if necessary.
 
 		this_smartass->freq_change_time_in_idle =
 			get_cpu_idle_time_us(cpu,&this_smartass->freq_change_time);
@@ -774,7 +792,7 @@ static void smartass_suspend(int cpu, int suspend)
 
 static void smartass_early_suspend(struct early_suspend *handler) {
 	int i;
-	if (suspended || sleep_ideal_freq==0) /* disable behavior for sleep_ideal_freq==0 */
+	if (suspended || sleep_ideal_freq==0) // disable behavior for sleep_ideal_freq==0
 		return;
 	suspended = 1;
 	for_each_online_cpu(i)
@@ -783,7 +801,7 @@ static void smartass_early_suspend(struct early_suspend *handler) {
 
 static void smartass_late_resume(struct early_suspend *handler) {
 	int i;
-	if (!suspended) /* already not suspended so nothing to do */
+	if (!suspended) // already not suspended so nothing to do
 		return;
 	suspended = 0;
 	for_each_online_cpu(i)
@@ -829,16 +847,16 @@ static int __init cpufreq_smartass_init(void)
 		this_smartass->freq_change_time = 0;
 		this_smartass->freq_change_time_in_idle = 0;
 		this_smartass->cur_cpu_load = 0;
-		/* intialize timer: */
+		// intialize timer:
 		init_timer_deferrable(&this_smartass->timer);
 		this_smartass->timer.function = cpufreq_smartass_timer;
 		this_smartass->timer.data = i;
 		work_cpumask_test_and_clear(i);
 	}
 
-	/* Scale up is high priority */
-	up_wq = alloc_workqueue("ksmartass_up", WQ_HIGHPRI, 1);
-	down_wq = alloc_workqueue("ksmartass_down", 0, 1);
+	// Scale up is high priority
+	up_wq = create_rt_workqueue("ksmartass_up");
+	down_wq = create_workqueue("ksmartass_down");
 	if (!up_wq || !down_wq)
 		return -ENOMEM;
 

@@ -36,3 +36,4 @@ obj-$(CONFIG_QUICKLIST) += quicklist.o
 obj-$(CONFIG_CGROUP_MEM_RES_CTLR) += memcontrol.o page_cgroup.o
 obj-$(CONFIG_XVMALLOC) += xvmalloc.o
 obj-$(CONFIG_COMPCACHE) += ramzswap_drv.o
+obj-$(CONFIG_CLEANCACHE) += cleancache.o

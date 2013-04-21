@@ -284,6 +284,8 @@ static inline void __cpus_shift_left(cpumask_t *dstp,
 	((struct cpumask *)(1 ? (bitmap)				\
 			    : (void *)sizeof(__check_is_bitmap(bitmap))))
 
+
+
 static inline int __check_is_bitmap(const unsigned long *bitmap)
 {
 	return 1;
@@ -548,6 +550,19 @@ static inline unsigned int cpumask_check(unsigned int cpu)
 #endif /* CONFIG_DEBUG_PER_CPU_MAPS */
 	return cpu;
 }
+
+/**
+ * cpumask_test_and_clear_cpu - atomically test and clear a cpu in a cpumask
+ * @cpu: cpu number (< nr_cpu_ids)
+ * @cpumask: the cpumask pointer
+ *
+ * test_and_clear_bit wrapper for cpumasks.
+ */
+static inline int cpumask_test_and_clear_cpu(int cpu, struct cpumask *cpumask)
+{
+	return test_and_clear_bit(cpumask_check(cpu), cpumask_bits(cpumask));
+}
+
 
 #if NR_CPUS == 1
 /* Uniprocessor.  Assume all masks are "1". */

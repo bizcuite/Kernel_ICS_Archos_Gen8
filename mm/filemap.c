@@ -35,6 +35,7 @@
 #include <linux/memcontrol.h>
 #include <linux/mm_inline.h> /* for page_is_file_cache() */
 #include "internal.h"
+#include <linux/cleancache.h>
 
 /*
  * FIXME: remove all knowledge of the buffer layer from the core VM
@@ -115,6 +116,12 @@
 void __remove_from_page_cache(struct page *page)
 {
 	struct address_space *mapping = page->mapping;
+
+if (PageUptodate(page) && PageMappedToDisk(page)) 
+	cleancache_put_page(page); 
+else 
+	cleancache_flush_page(mapping, page); 
+
 
 	radix_tree_delete(&mapping->page_tree, page->index);
 	page->mapping = NULL;
