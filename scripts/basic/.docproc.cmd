@@ -1,4 +1,4 @@
-cmd_scripts/basic/docproc := gcc -Wp,-MD,scripts/basic/.docproc.d -Wall -Wstrict-prototypes -O2 -fomit-frame-pointer     -o scripts/basic/docproc scripts/basic/docproc.c  
+cmd_scripts/basic/docproc := /usr/bin/gcc -Wp,-MD,scripts/basic/.docproc.d      -o scripts/basic/docproc scripts/basic/docproc.c  
 
 deps_scripts/basic/docproc := \
   scripts/basic/docproc.c \
@@ -18,8 +18,6 @@ deps_scripts/basic/docproc := \
   /usr/lib/gcc/x86_64-linux-gnu/4.4.3/include/stdarg.h \
   /usr/include/bits/stdio_lim.h \
   /usr/include/bits/sys_errlist.h \
-  /usr/include/bits/stdio.h \
-  /usr/include/bits/stdio2.h \
   /usr/include/stdlib.h \
   /usr/include/sys/types.h \
   /usr/include/time.h \
@@ -33,18 +31,13 @@ deps_scripts/basic/docproc := \
   /usr/include/sys/sysmacros.h \
   /usr/include/bits/pthreadtypes.h \
   /usr/include/alloca.h \
-  /usr/include/bits/stdlib.h \
   /usr/include/string.h \
   /usr/include/xlocale.h \
-  /usr/include/bits/string.h \
-  /usr/include/bits/string2.h \
-  /usr/include/bits/string3.h \
   /usr/include/ctype.h \
   /usr/include/unistd.h \
   /usr/include/bits/posix_opt.h \
   /usr/include/bits/confname.h \
   /usr/include/getopt.h \
-  /usr/include/bits/unistd.h \
   /usr/lib/gcc/x86_64-linux-gnu/4.4.3/include-fixed/limits.h \
   /usr/lib/gcc/x86_64-linux-gnu/4.4.3/include-fixed/syslimits.h \
   /usr/include/limits.h \

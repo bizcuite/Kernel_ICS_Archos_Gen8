@@ -1,4 +1,4 @@
-cmd_scripts/basic/fixdep := gcc -Wp,-MD,scripts/basic/.fixdep.d -Wall -Wstrict-prototypes -O2 -fomit-frame-pointer     -o scripts/basic/fixdep scripts/basic/fixdep.c  
+cmd_scripts/basic/fixdep := /usr/bin/gcc -Wp,-MD,scripts/basic/.fixdep.d      -o scripts/basic/fixdep scripts/basic/fixdep.c  
 
 deps_scripts/basic/fixdep := \
   scripts/basic/fixdep.c \
@@ -35,18 +35,12 @@ deps_scripts/basic/fixdep := \
   /usr/include/bits/posix_opt.h \
   /usr/include/bits/confname.h \
   /usr/include/getopt.h \
-  /usr/include/bits/unistd.h \
   /usr/include/fcntl.h \
   /usr/include/bits/fcntl.h \
-  /usr/include/bits/fcntl2.h \
   /usr/include/string.h \
   /usr/include/xlocale.h \
-  /usr/include/bits/string.h \
-  /usr/include/bits/string2.h \
   /usr/include/stdlib.h \
-  /usr/include/bits/string3.h \
   /usr/include/alloca.h \
-  /usr/include/bits/stdlib.h \
   /usr/include/stdio.h \
   /usr/include/libio.h \
   /usr/include/_G_config.h \
@@ -54,8 +48,6 @@ deps_scripts/basic/fixdep := \
   /usr/lib/gcc/x86_64-linux-gnu/4.4.3/include/stdarg.h \
   /usr/include/bits/stdio_lim.h \
   /usr/include/bits/sys_errlist.h \
-  /usr/include/bits/stdio.h \
-  /usr/include/bits/stdio2.h \
   /usr/lib/gcc/x86_64-linux-gnu/4.4.3/include-fixed/limits.h \
   /usr/lib/gcc/x86_64-linux-gnu/4.4.3/include-fixed/syslimits.h \
   /usr/include/limits.h \
@@ -77,7 +69,6 @@ deps_scripts/basic/fixdep := \
   /usr/include/asm-generic/socket.h \
   /usr/include/asm/sockios.h \
   /usr/include/asm-generic/sockios.h \
-  /usr/include/bits/socket2.h \
   /usr/include/bits/in.h \
 
 scripts/basic/fixdep: $(deps_scripts/basic/fixdep)

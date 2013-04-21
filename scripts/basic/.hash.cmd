@@ -1,4 +1,4 @@
-cmd_scripts/basic/hash := gcc -Wp,-MD,scripts/basic/.hash.d -Wall -Wstrict-prototypes -O2 -fomit-frame-pointer     -o scripts/basic/hash scripts/basic/hash.c  
+cmd_scripts/basic/hash := /usr/bin/gcc -Wp,-MD,scripts/basic/.hash.d      -o scripts/basic/hash scripts/basic/hash.c  
 
 deps_scripts/basic/hash := \
   scripts/basic/hash.c \
@@ -18,8 +18,6 @@ deps_scripts/basic/hash := \
   /usr/lib/gcc/x86_64-linux-gnu/4.4.3/include/stdarg.h \
   /usr/include/bits/stdio_lim.h \
   /usr/include/bits/sys_errlist.h \
-  /usr/include/bits/stdio.h \
-  /usr/include/bits/stdio2.h \
   /usr/include/stdlib.h \
   /usr/include/sys/types.h \
   /usr/include/time.h \
@@ -33,12 +31,8 @@ deps_scripts/basic/hash := \
   /usr/include/sys/sysmacros.h \
   /usr/include/bits/pthreadtypes.h \
   /usr/include/alloca.h \
-  /usr/include/bits/stdlib.h \
   /usr/include/string.h \
   /usr/include/xlocale.h \
-  /usr/include/bits/string.h \
-  /usr/include/bits/string2.h \
-  /usr/include/bits/string3.h \
 
 scripts/basic/hash: $(deps_scripts/basic/hash)
 

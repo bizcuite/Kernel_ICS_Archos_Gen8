@@ -49,24 +49,6 @@ static struct clk *mpu_clk;
 
 /* TODO: Add support for SDRAM timing changes */
 
-static ssize_t mpu_freq_show(struct kobject *, struct kobj_attribute *,
-              char *);
-static ssize_t mpu_freq_store(struct kobject *k, struct kobj_attribute *,
-			  const char *buf, size_t n);
-
-
-static struct kobj_attribute mpu_freq_opp1_attr =
-    __ATTR(mpu_freq_opp1, 0644, mpu_freq_show, mpu_freq_store);
-static struct kobj_attribute mpu_freq_opp2_attr =
-    __ATTR(mpu_freq_opp2, 0644, mpu_freq_show, mpu_freq_store);
-static struct kobj_attribute mpu_freq_opp3_attr =
-    __ATTR(mpu_freq_opp3, 0644, mpu_freq_show, mpu_freq_store);
-static struct kobj_attribute mpu_freq_opp4_attr =
-    __ATTR(mpu_freq_opp4, 0644, mpu_freq_show, mpu_freq_store);
-static struct kobj_attribute mpu_freq_opp5_attr =
-    __ATTR(mpu_freq_opp5, 0644, mpu_freq_show, mpu_freq_store);
-
-
 int omap_verify_speed(struct cpufreq_policy *policy)
 {
 	if (freq_table)
@@ -144,7 +126,6 @@ static int omap_target(struct cpufreq_policy *policy,
 static int __init omap_cpu_init(struct cpufreq_policy *policy)
 {
 	int result = 0;
-    int error = -EINVAL;
 
 	mpu_clk = clk_get(NULL, MPU_CLK);
 	if (IS_ERR(mpu_clk))
@@ -154,7 +135,6 @@ static int __init omap_cpu_init(struct cpufreq_policy *policy)
 		return -EINVAL;
 
 	policy->cur = policy->min = policy->max = omap_getspeed(0);
-
 
 	clk_init_cpufreq_table(&freq_table);
 	if (freq_table) {
@@ -176,36 +156,6 @@ static int __init omap_cpu_init(struct cpufreq_policy *policy)
 
 	/* Program the actual transition time for worstcase */
 	policy->cpuinfo.transition_latency = 30 * 1000;
-
-    error = sysfs_create_file(power_kobj, &mpu_freq_opp1_attr.attr);
-	if (error) {
-		printk(KERN_ERR "sysfs_create_file failed: %d\n", error);
-		return error;
-	}
-
-	error = sysfs_create_file(power_kobj, &mpu_freq_opp2_attr.attr);
-	if (error) {
-		printk(KERN_ERR "sysfs_create_file failed: %d\n", error);
-		return error;
-	}
-
-	error = sysfs_create_file(power_kobj, &mpu_freq_opp3_attr.attr);
-	if (error) {
-		printk(KERN_ERR "sysfs_create_file failed: %d\n", error);
-		return error;
-	}
-
-	error = sysfs_create_file(power_kobj, &mpu_freq_opp4_attr.attr);
-	if (error) {
-		printk(KERN_ERR "sysfs_create_file failed: %d\n", error);
-		return error;
-	}
-
-	error = sysfs_create_file(power_kobj, &mpu_freq_opp5_attr.attr);
-	if (error) {
-		printk(KERN_ERR "sysfs_create_file failed: %d\n", error);
-		return error;
-	}
 	return 0;
 }
 
@@ -235,62 +185,6 @@ static int __init omap_cpufreq_init(void)
 {
 	return cpufreq_register_driver(&omap_driver);
 }
-
-static ssize_t mpu_freq_show(struct kobject *kobj,
-        struct kobj_attribute *attr, char *buf)
-{
-    struct omap_opp *mpu_table = omap_get_mpu_rate_table();
-
-    if ( attr == &mpu_freq_opp1_attr) {
-        return sprintf(buf, "%lu\n", mpu_table[1].rate / (1000*1000));
-    }
-    if (attr == &mpu_freq_opp2_attr) {
-        return sprintf(buf, "%lu\n", mpu_table[2].rate / (1000*1000));
-    }
-    if (attr == &mpu_freq_opp3_attr) {
-        return sprintf(buf, "%lu\n", mpu_table[3].rate / (1000*1000));
-    }
-    if (attr == &mpu_freq_opp4_attr) {
-        return sprintf(buf, "%lu\n", mpu_table[4].rate / (1000*1000));
-    }
-    if (attr == &mpu_freq_opp5_attr) {
-        return sprintf(buf, "%lu\n", mpu_table[5].rate / (1000*1000));
-    }
-}
-
-static ssize_t mpu_freq_store(struct kobject *k,
-        struct kobj_attribute *attr, const char *buf, size_t n)
-{
-    unsigned int freq;
-    struct omap_opp *mpu_table = omap_get_mpu_rate_table();
-
-    if (sscanf(buf, "%u", &freq) == 1) {
-        if (freq > 100 && freq < 2000) {
-            //Convert Megahertz to hertz
-            freq *= 1000*1000;
-
-            if ( attr == &mpu_freq_opp1_attr) {
-                mpu_table[1].rate = freq;
-            } else if (attr == &mpu_freq_opp2_attr) {
-                mpu_table[2].rate = freq;
-            } else if (attr == &mpu_freq_opp3_attr) {
-                mpu_table[3].rate = freq;
-            } else if (attr == &mpu_freq_opp4_attr) {
-                mpu_table[4].rate = freq;
-            } else if (attr == &mpu_freq_opp5_attr) {
-                mpu_table[5].rate = freq;
-            }
-            clk_init_cpufreq_table(&freq_table);
-            struct cpufreq_policy *policy = cpufreq_cpu_get(0);
-            if(policy)
-                cpufreq_frequency_table_cpuinfo(policy, freq_table);
-        } else
-            return -EINVAL;
-    } else
-        return -EINVAL;
-    return n;
-}
-
 
 late_initcall(omap_cpufreq_init);
 

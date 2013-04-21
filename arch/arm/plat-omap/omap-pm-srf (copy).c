@@ -28,7 +28,6 @@
 #include <mach/resource.h>
 #include <mach/omapdev.h>
 #include <mach/omap34xx.h>
-#include <mach/control.h>
 
 struct omap_opp *dsp_opps;
 struct omap_opp *mpu_opps;
@@ -413,13 +412,21 @@ void omap_pm_if_exit(void)
 
 u8 omap_pm_get_max_vdd1_opp()
 {
-	if (cpu_is_omap3630()) 
-	{
-		
+	if (cpu_is_omap3630()) {
+		switch (omap_rev_id()) {
+		case OMAP_3630:
+		default:
+			if (sr_read_efuse_nvalues(VDD1_OPP5) != 0)
+				return VDD1_OPP5;
+			else
+				return VDD1_OPP4;
+		case OMAP_3630_800:
+			return VDD1_OPP3;
+		case OMAP_3630_1000:
+			return VDD1_OPP4;
+		case OMAP_3630_1200:
 			return VDD1_OPP5;
-	
-
-
+		}
 	} else {
 		if (omap_rev() < OMAP3430_REV_ES3_1)
 			return VDD1_OPP5;

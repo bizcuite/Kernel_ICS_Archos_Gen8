@@ -212,7 +212,7 @@ IS_OMAP_SUBCLASS(363x, 0x363)
 #  undef  cpu_is_omap34xx
 #  define cpu_is_omap34xx()		1
 #  undef  cpu_is_omap3630
-# define cpu_is_omap3630()		is_omap363x()
+# define cpu_is_omap3630()		1
 # endif
 # if defined(CONFIG_ARCH_OMAP3430)
 #  undef  cpu_is_omap343x
@@ -414,8 +414,6 @@ int omap_type(void);
 #define OMAP_3430	0x3430
 #define OMAP_3440	0x3440
 #define OMAP_3630	0x3630
-#define OMAP_3630_300	0x3630300
-#define OMAP_3630_600	0x3630600
 #define OMAP_3630_800	0x3630800
 #define OMAP_3630_1000	0x36301000
 #define OMAP_3630_1200	0x36301200
